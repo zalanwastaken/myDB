@@ -66,8 +66,8 @@ local function mergeDicts(t1, t2)
     end
 end
 
---local json = require(getScriptFolder().."/json/json")
-local json = require("libs.myDB.json.json") --* Provides json.encode and json.decode
+local json = require(getScriptFolder().."/json/json")
+--local json = require("libs.myDB.json.json") --* Provides json.encode and json.decode
 local myDBInternal = {
     __VER__ = "INF_DEV"
 }
