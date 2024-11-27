@@ -1,6 +1,8 @@
 local function getScriptFolder()
     return(debug.getinfo(1, "S").source:sub(2):match("(.*/)"))
 end
+--local json = require(getScriptFolder().."/json/json")
+local json = require("libs.myDB.json.json") --* Provides json.encode and json.decode
 local function idgen(length)
     local chars = {
         --* Small chars
@@ -65,12 +67,29 @@ local function mergeDicts(t1, t2)
         return result
     end
 end
---local json = require(getScriptFolder().."/json/json")
-local json = require("libs.myDB.json.json") --* Provides json.encode and json.decode
+local function getdbinfo(dbname)
+    if love.filesystem.getInfo(dbname) then
+        return(json.decode(love.filesystem.read(dbname.."/info.json")))
+    else
+        return(nil)
+    end
+end
+local function savedbinfo(dbname, info)
+    if love.filesystem.getInfo(dbname) then
+        love.filesystem.write(dbname.."/info.json", json.encode(info))
+    end
+end
+function removeFileExtension(filename)
+    return filename:match("(.+)%.[^%.]+$") or filename
+end
+function isJsonFile(filename)
+    return filename:lower():match("%.json$") ~= nil
+end
 local myDBInternal = {
     __VER__ = "INF_DEV"
 }
 local myDB = {
+    __VER__ = myDBInternal.__VER__,
     db = {
         createDB = function(name)
             if not(love.filesystem.getInfo(name)) then
@@ -83,6 +102,8 @@ local myDB = {
                     VER = myDBInternal.__VER__,
                     tables = {}
                 }))
+            else
+                error("DB already exists")
             end
         end,
         createTable = function(dbname, tablename, data)
@@ -121,8 +142,69 @@ local myDB = {
                     love.filesystem.write(dbname.."/"..tablename..".json", json.encode(mergeDicts(json.decode(love.filesystem.read(dbname.."/"..tablename..".json")), data)))
                 end
             end
+        end,
+        tableExists = function(dbname, tablename)
+            if love.filesystem.getInfo(dbname) then
+                if love.filesystem.getInfo(dbname.."/"..tablename..".json") then
+                    return(true)
+                else
+                    return(false)
+                end
+            end
+        end,
+        dbExists = function(dbname)
+            if love.filesystem.getInfo(dbname) then
+                return(true)
+            else
+                return(false)
+            end
+        end,
+        createStructTable = function(dbname, tablename, struct)
+            local info = getdbinfo(dbname)
+            if info ~= nil then
+                if contains(info.tables, tablename) ~= true then
+                    info.tables[#info.tables + 1] = tablename
+                    savedbinfo(dbname, info)
+                    love.filesystem.newFile(dbname.."/"..tablename..".json")
+                    struct = {struct=struct}
+                    print(json.encode(struct))
+                    love.filesystem.write(dbname.."/"..tablename..".json", json.encode(struct))
+                else
+                    error("Table "..tablename.." already exists")
+                end
+            end
+        end,
+        addStructData = function(dbname, tablename, vals)
+            local info = getdbinfo(dbname)
+            --TODO
+        end
+    },
+    json = {
+        --? Provided by the json lib
+        encode = json.encode,
+        decode = json.decode
+    },
+    fs = {
+        removeDbFile = function(dbname, file) --! Does NOT update the DB info use with care
+            if love.filesystem.getInfo(dbname) then
+                if love.filesystem.getInfo(dbname.."/"..file) then
+                    love.filesystem.remove(dbname.."/"..file)
+                end
+            end
+        end,
+        fixTableInfo = function(dbname)
+            local info = getdbinfo(dbname)
+            if info ~= nil then
+                local files = love.filesystem.getDirectoryItems(dbname)
+                info.tables = {}
+                for i = 1, #files, 1 do
+                    if files[i] ~= "info.json" and isJsonFile(files[i]) then
+                        info.tables[#info.tables + 1] = removeFileExtension(files[i])
+                    end
+                end
+                savedbinfo(dbname, info)
+            end
         end
     }
 }
-myDB["__VER__"] = myDBInternal.__VER__
 return(myDB)

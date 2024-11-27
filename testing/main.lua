@@ -1,11 +1,23 @@
 mydb = require("libs.myDB.init")
 local dbname = "mydb"
 function love.load()
-    mydb.db.createDB(dbname)
-    mydb.db.createTable(dbname, "Hello", {
-        data = "Hello world !"
-    })
+    if not(mydb.db.dbExists(dbname)) then
+        mydb.db.createDB(dbname)
+    end
+    if not(mydb.db.tableExists(dbname, "Hello")) then
+        mydb.db.createTable(dbname, "Hello", {
+            data = "Hello world !"
+        })
+    else
+        mydb.db.modifyTable(dbname, "Hello", {data = "Hello world !"})
+    end
     print(mydb.db.getTableData(dbname, "Hello").data)
     mydb.db.modifyTable(dbname, "Hello", {data = "Hi"})
     print(mydb.db.getTableData(dbname, "Hello").data)
+    if not(mydb.db.tableExists(dbname, "test")) then
+        mydb.db.createStructTable(dbname, "test", {"a", "b", "c"})
+    else
+        mydb.fs.removeDbFile(dbname, "test.json")
+        mydb.fs.fixTableInfo(dbname)
+    end
 end
