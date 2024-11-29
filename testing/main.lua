@@ -1,4 +1,4 @@
-mydb = require("libs.myDB.init")
+local mydb = require("libs.myDB.init")
 local dbname = "mydb"
 function love.load()
     if not(mydb.db.dbExists(dbname)) then
@@ -16,6 +16,8 @@ function love.load()
     print(mydb.db.getTableData(dbname, "Hello").data)
     if not(mydb.db.tableExists(dbname, "test")) then
         mydb.db.createStructTable(dbname, "test", {"a", "b", "c"})
+        mydb.db.addStructData(dbname, "test", {a = 1, b = 2, c = 3})
+        print(mydb.db.getStructData(dbname, "test", 1).a)
     else
         mydb.fs.removeDbFile(dbname, "test.json")
         mydb.fs.fixTableInfo(dbname)
