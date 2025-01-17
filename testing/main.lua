@@ -22,4 +22,8 @@ function love.load()
         mydb.fs.removeDbFile(dbname, "test.json")
         mydb.fs.fixTableInfo(dbname)
     end
+    local query = mydb.queryStructData("mydb", "test", "b")
+    for i = 1, #query, 1 do
+        print(query[i], i)
+    end
 end

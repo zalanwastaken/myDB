@@ -13,8 +13,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 local function getScriptFolder()
     return(debug.getinfo(1, "S").source:sub(2):match("(.*/)"))
 end
---local json = require(getScriptFolder().."/json/json") --* Provides json.encode and json.decode
-local json = require("libs.myDB.json.json") --* Provides json.encode and json.decode
+local json = require(getScriptFolder().."/json/json") --* Provides json.encode and json.decode
+--local json = require("libs.myDB.json.json") --* Provides json.encode and json.decode
 --* FUNCS
 local function idgen(length)
     local chars = {
@@ -107,11 +107,15 @@ local function getKeys(tbl)
 end
 --* CODE
 local myDBInternal = {
-    __VER__ = "1.0.0"
+    __VER__ = "1.0.1"
 }
 local myDB = {
     __VER__ = myDBInternal.__VER__,
     db = {
+        --- func desc
+        --Creates a db
+        ---@param dbname string the name of the db to be created
+        ---@return nil
         createDB = function(dbname)
             if not(love.filesystem.getInfo(dbname)) then
                 love.filesystem.createDirectory(dbname)
@@ -127,6 +131,12 @@ local myDB = {
                 error("DB "..dbname.." already exists")
             end
         end,
+        --- func desc
+        --Creates a table
+        ---@param dbname string the name of the db in which to create a table
+        ---@param tablename string the name of the table to create
+        ---@param data table the data to put in the table
+        ---@return nil
         createTable = function(dbname, tablename, data)
             if love.filesystem.getInfo(dbname) then
                 local info = getdbinfo(dbname)
@@ -142,6 +152,11 @@ local myDB = {
                 end
             end
         end,
+        --- func desc
+        --Gets the data of a table
+        ---@param dbname string name of the db in which the table exists
+        ---@param tablename string name of the table
+        ---@return table
         getTableData = function(dbname, tablename)
             if love.filesystem.getInfo(dbname) then
                 local info = getdbinfo(dbname)
@@ -150,11 +165,20 @@ local myDB = {
                 end
             end
         end,
+        --- func desc
+        ---@param dbname string the name of the db
+        ---@return table db info
         getDbInfo = function(dbname)
             if love.filesystem.getInfo(dbname) then
                 return(getdbinfo(dbname))
             end
         end,
+        --- func desc
+        ---@param dbname string name of the db
+        ---@param tablename string name of the table
+        ---@param data table the data to modify
+        ---@return nil
+        --! ONLY UPDATES THE GIVEN KEYS
         modifyTable = function(dbname, tablename, data)
             if love.filesystem.getInfo(dbname) then
                 local info = getdbinfo(dbname)
@@ -163,6 +187,10 @@ local myDB = {
                 end
             end
         end,
+        --- func desc
+        ---@param dbname string name of the db
+        ---@param tablename string name of the table
+        ---@return boolean
         tableExists = function(dbname, tablename)
             if love.filesystem.getInfo(dbname) then
                 if love.filesystem.getInfo(dbname.."/"..tablename..".json") then
@@ -172,6 +200,9 @@ local myDB = {
                 end
             end
         end,
+        --- func desc
+        ---@param dbname string
+        ---@return boolean
         dbExists = function(dbname)
             if love.filesystem.getInfo(dbname) then
                 return(true)
@@ -179,6 +210,11 @@ local myDB = {
                 return(false)
             end
         end,
+        --- func desc
+        ---@param dbname string
+        ---@param tablename string
+        ---@param struct table
+        ---@return nil
         createStructTable = function(dbname, tablename, struct)
             local info = getdbinfo(dbname)
             if info ~= nil then
@@ -196,6 +232,11 @@ local myDB = {
                 error("DB "..dbname.." does not exist")
             end
         end,
+        --- func desc
+        ---@param dbname string
+        ---@param tablename string
+        ---@param vals table
+        ---@return nil
         addStructData = function(dbname, tablename, vals)
             local info = getdbinfo(dbname)
             if getdbinfo ~= nil then
@@ -225,6 +266,30 @@ local myDB = {
                 error("DB "..dbname.." does not exist")
             end
         end,
+        --- func desc
+        ---@param dbname string
+        ---@param tablename string
+        ---@param sno number
+        ---@return nil
+        removeStructData = function(dbname, tablename, sno)
+            local info = getdbinfo(dbname)
+            if info ~= nil then
+                if contains(info.tables, tablename) then
+                    local tbl = json.decode(love.filesystem.read(dbname.."/"..tablename..".json"))
+                    table.remove(tbl.data, sno)
+                    love.filesystem.write(dbname.."/"..tablename..".json", tbl)
+                else
+                    error("Table "..tablename.." does not exist in DB "..dbname)
+                end
+            else
+                error("DB "..dbname.." does not exist")
+            end
+        end,
+        --- func desc
+        ---@param dbname string
+        ---@param tablename string
+        ---@param sno number
+        ---@return table
         getStructData = function(dbname, tablename, sno)
             local info = getdbinfo(dbname)
             if info ~= nil then
@@ -243,6 +308,27 @@ local myDB = {
             end
         end
     },
+    queryStructData = function(dbname, tablename, fieldname)
+        local info = getdbinfo(dbname)
+        if info ~= nil then
+            if contains(info.tables, tablename) then
+                local table = json.decode(love.filesystem.read(dbname.."/"..tablename..".json"))
+                if contains(table.struct, fieldname) then
+                    local ret = {}
+                    for i = 1, #table.data, 1 do
+                        ret[i] = table.data[i][fieldname]
+                    end
+                    return(ret)
+                else
+                    error("Field "..fieldname.." does not exist in table "..tablename)
+                end
+            else
+                error("Table "..tablename.." does not exist in DB "..dbname)
+            end
+        else
+            error("DB "..dbname.." does not exist")
+        end
+    end,
     json = {
         --? Provided by the json lib
         encode = json.encode,
