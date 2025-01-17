@@ -107,7 +107,7 @@ local function getKeys(tbl)
 end
 --* CODE
 local myDBInternal = {
-    __VER__ = "1.0.1"
+    __VER__ = "1.0.0"
 }
 local myDB = {
     __VER__ = myDBInternal.__VER__,
