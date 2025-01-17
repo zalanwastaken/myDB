@@ -308,6 +308,27 @@ local myDB = {
             end
         end
     },
+    queryStructData = function(dbname, tablename, fieldname)
+        local info = getdbinfo(dbname)
+        if info ~= nil then
+            if contains(info.tables, tablename) then
+                local table = json.decode(love.filesystem.read(dbname.."/"..tablename..".json"))
+                if contains(table.struct, fieldname) then
+                    local ret = {}
+                    for i = 1, #table.data, 1 do
+                        ret[i] = table.data[i][fieldname]
+                    end
+                    return(ret)
+                else
+                    error("Field "..fieldname.." does not exist in table "..tablename)
+                end
+            else
+                error("Table "..tablename.." does not exist in DB "..dbname)
+            end
+        else
+            error("DB "..dbname.." does not exist")
+        end
+    end,
     json = {
         --? Provided by the json lib
         encode = json.encode,
